@@ -55,3 +55,9 @@ bash autopilot/tests/test_e2e.sh routing
 ```
 
 Les deux premiers sont gratuits. Le troisième lance de vraies sessions Claude (quelques dollars) ; `all` ajoute la chaîne complète après « go » (plus long et plus cher).
+
+## Organisation du repo
+
+- `skills/` : les skills Claude (autopilot, dev, doubt-driven-dev, hostile-review, interview). `install.sh` crée leurs liens dans `~/.claude/skills`.
+- `agents/` : les sous-agents de /dev.
+- `workflows/` : le workflow n8n rendu pour le cours « Veille carrousels TikTok Shop » (export `.workflow.ts`, à importer avec n8n-cli).

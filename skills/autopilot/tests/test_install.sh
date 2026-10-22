@@ -1,6 +1,6 @@
 #!/bin/bash
 # C5: install.sh on a blank (simulated) Claude config, then a second run (idempotence).
-REPO="$(cd "$(dirname "$0")/../.." && pwd)"
+REPO="$(cd "$(dirname "$0")/../../.." && pwd)"
 export CLAUDE_CONFIG_DIR="$(mktemp -d)"
 export AUTOPILOT_HOME="$CLAUDE_CONFIG_DIR/autopilot"
 PASS=0; FAIL=0

@@ -22,7 +22,7 @@ link() { # source, target: replace an existing link; a real file/folder is moved
 }
 
 echo "Skills :"
-for d in "$REPO"/*/; do
+for d in "$REPO"/skills/*/; do
   name="$(basename "$d")"
   [ -f "$d/SKILL.md" ] || continue
   link "${d%/}" "$CLAUDE_DIR/skills/$name"; echo "  $name"
@@ -68,7 +68,7 @@ with open(path, "w", encoding="utf-8") as f:
 EOF
 
 if [ -n "$DASHBOARD_URL" ]; then
-  python3 "$REPO/autopilot/scripts/state.py" config dashboard_url "$DASHBOARD_URL" >/dev/null
+  python3 "$REPO/skills/autopilot/scripts/state.py" config dashboard_url "$DASHBOARD_URL" >/dev/null
   echo "Tableau de bord : $DASHBOARD_URL"
 fi
 echo "OK. Les nouvelles sessions Claude Code utilisent maintenant l'autopilot."
