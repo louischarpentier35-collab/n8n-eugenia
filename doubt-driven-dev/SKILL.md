@@ -102,21 +102,12 @@ After **3 failed attempts on the same problem**, stop patching. Question your st
 
 1. Re-read the request or brief (`_dev/BRIEF.md`, `_dev/TASKS.md`, the message) and turn every requirement into a PASS/FAIL criterion, if not already done at the start.
 2. Run the **full** checks: the whole test suite, not one file; the build, not just the linter; the real behaviour (launch the app, `n8ncli test`, open the document), not just the build.
-3. **Non-code deliverables**: check the yes/no checklist written at the start, one line at a time, with the proof for each line. Then a fresh subagent checks the deliverable against the request (see Skeptic).
+3. **Non-code deliverables**: check the yes/no checklist written at the start, one line at a time, with the proof for each line.
 4. Run the **optimality review** on the whole result, not just component by component.
-5. **Big task** (several files or components, a client deliverable, a whole /dev batch, anything Louis will rely on without re-checking) → run the **Skeptic**.
-6. Only then write the final report.
+5. Write the final report (below).
+6. **Hand over to hostile review**: run the `hostile-review` skill (`~/.claude/skills/hostile-review/SKILL.md`) on the finished work, giving it the contract and your "Prouvé" list as claims to re-check. Skip it only for a trivial task (one small, obvious change) and say so in the report. Inside /dev, the orchestrator runs it at the end of phase 3, so builders and the debugger don't.
 
-## Skeptic (big tasks and non-code deliverables)
-
-Launch a fresh subagent (general-purpose) and give it **the artefact and the contract** (the request / brief / criteria, the diff or the deliverable), **not your reasoning or your conclusion**. Instruction: "Ton rôle est de prouver que ce travail est faux, incomplet, ne respecte pas la demande, ou réinvente quelque chose qui existe déjà en mieux. Pour chaque critère, réponds PASS ou FAIL avec la preuve (commande lancée, ligne du fichier, URL de la brique existante). Ne signale que ce qui touche la justesse, les exigences ou une alternative nettement plus simple, pas le style."
-
-Its findings are data, not a verdict. Sort each one:
-- **Valid** → fix it and re-run the related check.
-- **Misread the contract** → ignore, note why.
-- **Trade-off** → log it as HYPOTHÈSE or ask Louis if it's costly.
-- **Noise** → ignore.
-Re-check its claims yourself before acting on them (including that a suggested library exists and fits). Max 2 skeptic rounds; if a round finds nothing actionable, stop.
+Doubt-driven-dev proves the work as you build it; hostile review then attacks it with fresh eyes. You are not done until the hostile review verdict is "À LIVRER" (or Louis has decided on what remains).
 
 ## Doubt log
 
@@ -134,7 +125,7 @@ In French, short, five parts:
 - **Briques** : what you reused or adopted instead of building (and why), what you built yourself (and the gap that justified it).
 - **Hypothèses** : the choices you made alone, reversible, to review.
 - **Échecs / remises en cause / améliorations possibles** : what failed, what you changed your mind about, what could be simpler later.
-Plus the link to the doubt log.
+Plus the link to the doubt log. Then the hostile review adds its verdict and REVIEW.md.
 
 ## Excuses to reject
 

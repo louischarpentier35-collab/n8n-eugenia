@@ -31,9 +31,6 @@ Write the log in French. One section per task. Short lines, no prose: Louis must
 ### Hypothèses prises seul (réversibles, à relire)
 - H1 — <choix> — pourquoi : …
 
-### Sceptique (si gros chantier)
-- Remarque → classée valide / mauvaise lecture / compromis / bruit → action
-
 ### Bilan
 - Prouvé : …
 - Non prouvé : …
