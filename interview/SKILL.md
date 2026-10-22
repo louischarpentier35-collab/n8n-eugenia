@@ -1,6 +1,6 @@
 ---
 name: interview
-description: Structured interview of Louis before a project or an under-specified task, until zero doubt remains, then a written brief, validation and launch. Use when Louis types /interview, says "interview", "interviewe-moi", "pose-moi des questions avant de commencer". If Louis gives a clearly vague task (goal, scope or definition of done missing) without asking for the interview, do not start it: offer it in one line.
+description: Structured interview of Louis before a project or an under-specified task, until zero doubt remains, then a written brief, validation and launch. Started automatically (by the autopilot skill, or /dev) whenever a task's goal, scope or definition of done is unclear - Louis never has to ask for it. Also when Louis types /interview, says "interview", "interviewe-moi", "pose-moi des questions avant de commencer".
 ---
 
 # /interview — Remove every doubt before launching
@@ -79,7 +79,7 @@ Then add a line to `_brain/[project]/CLAUDE.md` (ongoing tasks section, or at th
 
 1. Show Louis a summary of the brief: goal in one sentence, what is in / out, definition of done, assumptions taken, and the link to the file.
 2. Ask for explicit validation ("Je lance ?"). A "cool", "sympa" or an emoji is not a validation: ask again. If he corrects something, update the brief and show only what changed.
-3. Once validated, launch:
+3. Once validated, launch (when the autopilot skill is running this task, follow its step 2 instead of this list):
    - **App / big coding project** → offer `/dev` (which will read `_dev/BRIEF.md` and skip its own clarification).
    - **n8n workflow** → follow `.agents/skills/n8n/SKILL.md` (pull, edit, validate, test). Always get Louis's approval before a real `n8ncli exec` or a publication.
    - **Anything else** → carry out the task directly, based on the brief.

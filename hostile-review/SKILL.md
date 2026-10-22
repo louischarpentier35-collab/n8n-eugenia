@@ -31,7 +31,11 @@ Launch **4 fresh subagents (general-purpose) in parallel, in one message**, one 
 | **C. Sécurité et coûts** | Secrets, personal data, injection, access control, unwanted sends (emails, posts), calls that burn API credits or execution quota, things that could cost money or reputation. |
 | **D. Simplicité et maintenabilité** | Over-engineering, dead code, a native node / built-in / maintained library ignored (allowed to search the web), readable in 6 months, project conventions respected. |
 
-Small task (one file, a few lines, a short document)? Still 4 lenses, but tell each reviewer to stay short. Never skip lens A.
+Small task (one file, a few lines, a short document)? Use the **light mode** below instead.
+
+### Light mode (short tasks)
+
+For a short task (autopilot `mode short`, or a change of a few files / a short document): **one** fresh subagent covers the 4 lenses at once (common prompt from `lenses.md` + the 4 checklists, at most 6 findings in total, lens A first). Then verify each BLOQUANT / MAJEUR yourself by reproducing it (no verifier subagents), fix the confirmed ones with the doubt-driven loop, re-run the full checks, and skip the re-review round. REVIEW.md is still written (short) and the verdict rules are the same. Never skip lens A, even in light mode.
 
 Each reviewer is **read-only** (it may run tests, `n8ncli validate`, `n8ncli test`, builds, greps, but changes nothing, and never runs a real `n8ncli exec`, a send, a push or a deploy). Each returns at most **8 findings**, each with:
 - **severity** (scale below), **lens**, **location** (file:line, n8n node name, document section),
