@@ -48,7 +48,7 @@ if [ "$WHAT" = chain ] || [ "$WHAT" = all ]; then
   P=$(field "$LONG_SID" phase); V=$(field "$LONG_SID" verdict); W=$(field "$LONG_SID" waiting_reason)
   { [ "$P" = "done" ] && [ -n "$V" ]; } || [ -n "$W" ]; check "C2 after go -> verdict reached without help, or waiting on a real decision (phase '$P', verdict '$V', waiting '$W')" $?
   R=$(field "$LONG_SID" review); [ -f "$R" ]; check "C2 REVIEW file exists" $?
-  (cd "$WORK/long" && { [ -x .venv/bin/pytest ] && .venv/bin/pytest -q >/dev/null 2>&1 || python3 -m pytest -q >/dev/null 2>&1; }); check "C2 pytest passes in the built project" $?
+  (cd "$WORK/long" && { [ -x .venv/bin/python ] && .venv/bin/python -m pytest -q >/dev/null 2>&1 || python3 -m pytest -q >/dev/null 2>&1; }); check "C2 pytest passes in the built project" $?
   grep -c '"name":"Agent"' "$WORK/long.jsonl" | { read n; [ "$n" -ge 2 ]; }; check "C2 hostile review used fresh subagents" $?
 fi
 

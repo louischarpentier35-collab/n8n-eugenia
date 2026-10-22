@@ -104,7 +104,14 @@ def main():
             fail(f"phase inconnue, choisis parmi : {', '.join(sorted(common.PHASES))}")
         if a.args[0] == "done":
             fail("pour terminer, utilise verdict puis finish")
+        if (a.args[0] == "building" and task.get("mode") != "short"
+                and task["phase"] in ("interview", "awaiting_go") and not task.get("go_seen")):
+            fail("pas de « go » de Louis : passe en awaiting_go, demande « Je lance ? » et termine ton "
+                 "tour. Seul un nouveau message de Louis après cette question peut lancer la construction "
+                 "(sa demande initiale n'est jamais un go, même détaillée ou « en autonomie »).")
         task["phase"] = a.args[0]
+        if a.args[0] == "awaiting_go":
+            task["go_seen"] = False
         task["waiting_reason"] = ""
         common.save(task)
         print(f"Phase : {task['phase']}. {DASHBOARD_HINT}")
@@ -142,6 +149,10 @@ def main():
             fail(f"verdict inconnu, choisis parmi : {', '.join(sorted(common.VERDICTS))}")
         if not a.review or not os.path.isfile(a.review):
             fail("--review doit pointer vers le fichier REVIEW.md écrit par hostile-review")
+        n = common.reviewer_agents(task.get("transcript"))
+        if n == 0:
+            fail("aucun relecteur neuf (sous-agent) dans cette session : hostile-review exige au moins "
+                 "un sous-agent relecteur, même en mode léger. Relire soi-même ne compte pas.")
         task["verdict"], task["review"] = a.args[0], os.path.abspath(a.review)
         task["phase"] = "reviewing"
         common.save(task)

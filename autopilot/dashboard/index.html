@@ -74,6 +74,7 @@ dash.calc('summary', {
   description: "Compte les tâches en cours, celles qui t'attendent et celles terminées.",
   inputs: ['tasks'],
   fn: (tasks) => {
+    tasks = tasks.filter((t) => t.placeholder !== true && t.placeholder !== 'true');
     const attn = (t) => t.phase === 'Attend ton go' || t.phase === 'Bloquée' || t.phase === 'En pause' || t.waiting !== '' || Number(t.pending_count) > 0;
     return [{
       active: tasks.filter((t) => ['Interview', 'En construction', 'Revue hostile'].includes(t.phase)).length,
@@ -122,7 +123,7 @@ dash.calc('summary', {
     }
     if (t.status !== 'ok') return;
 
-    const rows = t.data;
+    const rows = t.data.filter((r) => r.placeholder !== true && r.placeholder !== 'true');
     if (s.status === 'ok' && s.data[0]) {
       const { active, waiting } = s.data[0];
       take.textContent = rows.length === 0

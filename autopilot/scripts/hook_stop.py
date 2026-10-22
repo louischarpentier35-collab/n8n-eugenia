@@ -32,7 +32,12 @@ def main():
     except Exception:
         return
     task = common.load(session)
-    if not task or task.get("phase") not in common.WORKING or task.get("waiting_reason"):
+    if not task:
+        return
+    if data.get("transcript_path") and task.get("transcript") != data["transcript_path"]:
+        task["transcript"] = data["transcript_path"]
+        common.save(task, touch=False)
+    if task.get("phase") not in common.WORKING or task.get("waiting_reason"):
         return
 
     if task.get("idle_blocks", 0) >= common.MAX_IDLE_BLOCKS:

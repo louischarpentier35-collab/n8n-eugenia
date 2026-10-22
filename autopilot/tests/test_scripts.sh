@@ -15,6 +15,7 @@ check() { # name, condition result (0 = pass)
 }
 stop_in() { printf '{"session_id":"%s","hook_event_name":"Stop","stop_hook_active":%s,"cwd":"/tmp"}' "$1" "${2:-false}"; }
 prompt_in() { printf '{"session_id":"%s","hook_event_name":"UserPromptSubmit","prompt":"%s","cwd":"/tmp"}' "$1" "$2"; }
+golive() { STATE phase --session "$1" awaiting_go >/dev/null; prompt_in "$1" go | PROMPT >/dev/null; STATE phase --session "$1" building >/dev/null; }
 blocks() { echo "$1" | grep -q '"decision": *"block"'; }
 
 # --- Stop hook
@@ -23,16 +24,18 @@ OUT=$(stop_in A | STOP); [ -z "$OUT" ]; check "C3 no task -> stop allowed (norma
 STATE init --session A --title "Tache A" --project /tmp/projA >/dev/null
 OUT=$(stop_in A | STOP); [ -z "$OUT" ]; check "phase interview -> allowed" $?
 
+STATE phase --session A building >/dev/null 2>&1; [ $? -ne 0 ]; check "go gate: interview -> building refused" $?
 STATE phase --session A awaiting_go >/dev/null
 OUT=$(stop_in A | STOP); [ -z "$OUT" ]; check "phase awaiting_go -> allowed" $?
-
-STATE phase --session A building >/dev/null
+STATE phase --session A building >/dev/null 2>&1; [ $? -ne 0 ]; check "go gate: building refused before Louis writes again" $?
+prompt_in A "go" | PROMPT >/dev/null
+STATE phase --session A building >/dev/null; check "go gate: building accepted after a new message from Louis" $?
 OUT=$(stop_in A | STOP); blocks "$OUT"; check "C3 building without verdict -> blocked" $?
 echo "$OUT" | python3 -c 'import sys,json; d=json.load(sys.stdin); assert d["reason"]' 2>/dev/null; check "block output is valid JSON with a reason" $?
 
 OUT=$(stop_in B | STOP); [ -z "$OUT" ]; check "C7 other session B not blocked by A" $?
 STATE init --session B --title "Tache B" --project /tmp/projB >/dev/null
-STATE phase --session B building >/dev/null
+golive B
 STATE wait --session A --reason "attend Louis" >/dev/null
 OUT=$(stop_in A | STOP); [ -z "$OUT" ]; check "C4 waiting on Louis -> allowed" $?
 OUT=$(stop_in B | STOP); blocks "$OUT"; check "C7 B still blocked while A waits" $?
@@ -66,7 +69,7 @@ OUT=$(prompt_in Z "bonjour" | PROMPT)
 echo "$OUT" | python3 -c 'import sys,json; c=json.load(sys.stdin)["hookSpecificOutput"]["additionalContext"]; assert "session_id=Z" in c and "autopilot" in c' 2>/dev/null
 check "C1 prompt hook injects routing rule + session id (no task)" $?
 STATE init --session C --title "Tache C" --project /tmp/projC >/dev/null
-STATE phase --session C building >/dev/null
+golive C
 STATE ask --session C "Budget ?" >/dev/null
 OUT=$(prompt_in C "oui 20 euros" | PROMPT)
 echo "$OUT" | python3 -c 'import sys,json; c=json.load(sys.stdin)["hookSpecificOutput"]["additionalContext"]; assert "Tache C" in c and "building" in c and "Budget ?" in c' 2>/dev/null
@@ -83,6 +86,17 @@ echo "$OUT" | grep -q "mode auto"; check "awaiting_go + default permissions -> r
 OUT=$(printf '{"session_id":"C","hook_event_name":"UserPromptSubmit","prompt":"x","permission_mode":"auto"}' | PROMPT)
 echo "$OUT" | grep -q "mode auto"; [ $? -ne 0 ]; check "auto mode already on -> no reminder" $?
 OUT=$(stop_in C | STOP); [ -z "$OUT" ]; check "awaiting_go -> stop allowed (waiting for go)" $?
+
+# --- Verdict needs a fresh reviewer subagent in the transcript
+TR="$AUTOPILOT_HOME/t.jsonl"
+echo '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Bash","input":{"command":"pytest"}}]}}' > "$TR"
+STATE init --session V --title "Tache V" --project /tmp/v --mode short >/dev/null
+printf '{"session_id":"V","hook_event_name":"Stop","stop_hook_active":false,"transcript_path":"%s"}' "$TR" | STOP >/dev/null
+STATE verdict --session V "À LIVRER" --review "$REV" >/dev/null 2>&1; [ $? -ne 0 ]; check "verdict refused when no reviewer subagent ran (self-review)" $?
+echo '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Agent","input":{"description":"Revue hostile","prompt":"Tu es un relecteur hostile..."}}]}}' >> "$TR"
+STATE verdict --session V "À LIVRER" --review "$REV" >/dev/null 2>&1; check "verdict accepted once a reviewer subagent ran" $?
+OUT=$(printf '{"session_id":"V","hook_event_name":"UserPromptSubmit","prompt":"x","transcript_path":"/new/path.jsonl"}' | PROMPT)
+[ "$(STATE show --session V | python3 -c 'import sys,json; print(json.load(sys.stdin)["transcript"])')" = "/new/path.jsonl" ]; check "prompt hook records the transcript path" $?
 
 # --- Short tasks
 STATE init --session S --title "Tache courte" --project /tmp/s --mode short >/dev/null
@@ -111,7 +125,7 @@ STATE | grep -q "state.py init"; check "no command -> usage" $?
 # --- Robustness
 OUT=$(echo "not json" | STOP); [ $? -eq 0 ] && [ -z "$OUT" ]; check "garbage input -> stop allowed, no crash" $?
 OUT=$(echo "not json" | PROMPT); [ $? -eq 0 ]; check "garbage input -> prompt hook exits 0" $?
-STATE list | python3 -c 'import sys,json; d=json.load(sys.stdin); assert len(d)==4' 2>/dev/null; check "list returns all tasks" $?
+STATE list | python3 -c 'import sys,json; d=json.load(sys.stdin); assert len(d)==5' 2>/dev/null; check "list returns all tasks" $?
 
 rm -rf "$AUTOPILOT_HOME"
 echo "---"; echo "$PASS passed, $FAIL failed"; [ $FAIL -eq 0 ]

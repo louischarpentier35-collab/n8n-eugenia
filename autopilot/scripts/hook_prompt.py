@@ -25,6 +25,16 @@ def main():
         return
     ctx = ROUTING.format(sid=sid)
     task = common.load(sid)
+    changed = False
+    if task and data.get("transcript_path") and task.get("transcript") != data["transcript_path"]:
+        task["transcript"] = data["transcript_path"]
+        changed = True
+    if task and event == "UserPromptSubmit" and task.get("phase") == "awaiting_go" and not task.get("go_seen"):
+        # Louis wrote after the "Je lance ?": only now may the task move to building
+        task["go_seen"] = True
+        changed = True
+    if changed:
+        common.save(task, touch=False)
     if task and task.get("phase") not in ("done",):
         qs = common.pending(task)
         ctx += (

@@ -93,6 +93,13 @@ def export_dashboard():
             "updated_label": _label(t.get("updated_at", "")),
         })
     rows.sort(key=lambda r: r["updated"], reverse=True)
+    for r in rows:
+        r["placeholder"] = False
+    if not rows:
+        # the Dashboard type refuses a file with no rows: one marker row, hidden by the page
+        rows = [{"session": "-", "title": "", "project": "", "phase": "", "waiting": "",
+                 "pending_count": 0, "pending_text": "", "for_you": "", "verdict": "",
+                 "updated": "", "updated_label": "", "placeholder": True}]
     _write_json(DASHBOARD, {"rows": rows})
 
 
@@ -110,6 +117,30 @@ def load_config():
 def save_config(cfg):
     os.makedirs(HOME, exist_ok=True)
     _write_json(CONFIG, cfg)
+
+
+def reviewer_agents(transcript_path):
+    """Number of subagents launched for a review in the session transcript (None if unreadable).
+    A hostile-review verdict needs at least one: reviewing your own work is not a hostile review."""
+    try:
+        f = open(transcript_path, encoding="utf-8")
+    except (OSError, TypeError):
+        return None
+    n = 0
+    with f:
+        for line in f:
+            if '"tool_use"' not in line:
+                continue
+            try:
+                content = json.loads(line).get("message", {}).get("content", [])
+            except ValueError:
+                continue
+            for c in content if isinstance(content, list) else []:
+                if c.get("type") == "tool_use" and c.get("name") in ("Agent", "Task"):
+                    text = json.dumps(c.get("input", {}), ensure_ascii=False).lower()
+                    if any(k in text for k in ("hostile", "relecteur", "revue", "review")):
+                        n += 1
+    return n
 
 
 def pending(task):

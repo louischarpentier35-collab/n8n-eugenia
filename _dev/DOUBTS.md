@@ -27,6 +27,11 @@
 | D4 | Une sauvegarde laissée dans skills/ serait chargée comme un 2e skill « dev » | lecture du script d'install | — | risque réel | corrigé | sauvegardes dans ~/.claude/backups/ |
 | D5 | L'installation écrase les réglages ou les hooks de Louis | `tests/test_install.sh` (config vierge simulée + hook perso existant, 2 passages) | PASS | 2 FAIL (dev/agents absents du dépôt) | 12 PASS | continue |
 | D6 | Le tableau de bord (type Dashboard) ne lit pas les fichiers locaux | doc du type | — | confirmé | — | export `dashboard.json` + chargement en asset par Claude à chaque phase |
+| D7 | Le tableau de bord accepte un fichier vide | vue de Louis + document `runs` | PASS | FAIL (« no rows ») | PASS | ligne marqueur masquée par la page |
+| D8 | Claude classe bien une tâche longue | e2e (outil de dépenses) | long | FAIL : classée courte (il se juge rapide) | PASS (classée longue au 2e run) | tri sur le périmètre (3 fonctionnalités, nouveau projet, fiabilité, > 2 fichiers), jamais sur la durée |
+| D9 | La revue hostile utilise un relecteur neuf | e2e : sous-agent dans la transcription | ≥ 1 | FAIL (auto-relecture) | PASS | `verdict` refusé sans sous-agent relecteur dans la transcription (vérifié sur 2 vraies transcriptions : 5 et 0) |
+| D10 | Claude attend le go | e2e | awaiting_go | FAIL ×2 (demande détaillée prise pour un go) | e2e en cours | verrou : `phase building` refusé tant que Louis n'a pas écrit après la demande de go (posé par le hook de message) |
+| D11 | pytest échoue dans le projet construit | relance manuelle | — | 115 tests passent avec `python -m pytest` | — | bug du test (binaire pytest du venv), corrigé |
 
 ### Briques (réutiliser / adopter / construire)
 | # | Besoin | Cherché où | Candidats (2-3) | Décision | Pourquoi / manque qui justifie de construire |
