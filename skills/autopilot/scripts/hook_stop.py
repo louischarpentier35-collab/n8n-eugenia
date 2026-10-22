@@ -2,7 +2,9 @@
 """Stop hook: a launched autopilot task cannot end before a hostile-review verdict.
 
 Silent (stop allowed) when: no task for this session, a phase where stopping is normal,
-or the task is waiting on Louis. Never crashes: any error lets the stop through.
+the task is waiting on Louis, or background jobs are still running (their notification wakes
+Claude up: re-blocking meanwhile only re-reads the whole context for nothing). Blocks once;
+a second stop with no progress marks the task stalled. Never crashes: any error lets the stop through.
 """
 import json
 import os
@@ -42,6 +44,9 @@ def main():
     if task.get("phase") not in common.WORKING or task.get("waiting_reason"):
         return
 
+    if common.background_pending(data.get("transcript_path") or task.get("transcript")):
+        return
+
     if task.get("idle_blocks", 0) >= common.MAX_IDLE_BLOCKS:
         task["phase"] = "stalled"
         common.save(task, touch=False)
@@ -51,7 +56,7 @@ def main():
     task["idle_blocks"] = task.get("idle_blocks", 0) + 1
     common.save(task, touch=False)
     s = f"--session {session}"
-    if task.get("mode") == "short":
+    if task.get("level") == 3:
         step = ("termine la tâche en mode doubt-driven-dev, puis lance hostile-review en mode léger "
                 "(~/.claude/skills/hostile-review/SKILL.md, section « Light mode ») et enregistre le verdict")
     elif task["phase"] == "building":

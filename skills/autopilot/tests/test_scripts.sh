@@ -58,11 +58,34 @@ STATE verdict --session A "À LIVRER" --review "$REV" >/dev/null; check "verdict
 STATE finish --session A >/dev/null; check "finish accepted after verdict" $?
 OUT=$(stop_in A | STOP); [ -z "$OUT" ]; check "C3 done -> stop allowed" $?
 
-# Anti-loop: repeated blocks without any state update end in 'stalled'
-for i in 1 2 3 4 5; do stop_in B true | STOP >/dev/null; done
-OUT=$(stop_in B true | STOP); [ -z "$OUT" ]; check "anti-loop: 6th consecutive block without progress -> allowed" $?
+# Anti-loop: B was blocked once (above) with no progress since -> next stop allowed, task stalled
+OUT=$(stop_in B true | STOP); [ -z "$OUT" ]; check "anti-loop: 2nd stop without progress -> allowed" $?
 P=$(STATE show --session B | python3 -c 'import sys,json; print(json.load(sys.stdin)["phase"])')
 [ "$P" = "stalled" ]; check "anti-loop: phase set to stalled" $?
+
+# Background jobs still running -> never block (their notification wakes Claude up)
+STATE init --session G --title "Tache G" --project /tmp/projG >/dev/null; golive G
+TG="$AUTOPILOT_HOME/g.jsonl"
+cat > "$TG" <<'JSONL'
+{"type":"assistant","message":{"content":[{"type":"tool_use","id":"tu1","name":"Agent","input":{"prompt":"revue"}}]}}
+{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"tu1","content":"Async agent launched"}]},"toolUseResult":{"isAsync":true,"status":"async_launched"}}
+{"type":"assistant","message":{"content":[{"type":"tool_use","id":"tu2","name":"Bash","input":{"command":"sleep 9","run_in_background":true}}]}}
+JSONL
+sg() { printf '{"session_id":"G","hook_event_name":"Stop","stop_hook_active":false,"transcript_path":"%s"}' "$TG" | STOP; }
+OUT=$(sg); [ -z "$OUT" ]; check "background agent + command running -> stop allowed" $?
+echo '{"type":"user","message":{"content":"<task-notification> <task-id>a1</task-id> <tool-use-id>tu1</tool-use-id> <status>completed</status>"}}' >> "$TG"
+OUT=$(sg); [ -z "$OUT" ]; check "one job still running -> stop allowed" $?
+echo '{"type":"user","message":{"content":"<task-notification> <task-id>b2</task-id> <tool-use-id>tu2</tool-use-id> <status>completed</status>"}}' >> "$TG"
+OUT=$(sg); blocks "$OUT"; check "all jobs notified, no verdict -> blocked" $?
+
+# A stopped job (TaskStop, no notification) no longer counts as running
+TK="$AUTOPILOT_HOME/k.jsonl"
+cat > "$TK" <<'JSONL'
+{"type":"assistant","message":{"content":[{"type":"tool_use","id":"tu9","name":"Agent","input":{"prompt":"x"}}]}}
+{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"tu9","content":"agentId: wc7abc"}]},"toolUseResult":{"isAsync":true,"status":"async_launched","agentId":"wc7abc"}}
+{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"tu10","content":"Successfully stopped task: wc7abc"}]}}
+JSONL
+python3 -c "import sys; sys.path.insert(0,'$DIR/scripts'); import common; assert common.background_pending('$TK')==0"; check "stopped job -> not running anymore" $?
 
 # --- Prompt hook
 OUT=$(prompt_in Z "bonjour" | PROMPT)
@@ -90,7 +113,7 @@ OUT=$(stop_in C | STOP); [ -z "$OUT" ]; check "awaiting_go -> stop allowed (wait
 # --- Verdict needs a fresh reviewer subagent in the transcript
 TR="$AUTOPILOT_HOME/t.jsonl"
 echo '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Bash","input":{"command":"pytest"}}]}}' > "$TR"
-STATE init --session V --title "Tache V" --project /tmp/v --mode short >/dev/null
+STATE init --session V --title "Tache V" --project /tmp/v --level 3 >/dev/null
 printf '{"session_id":"V","hook_event_name":"Stop","stop_hook_active":false,"transcript_path":"%s"}' "$TR" | STOP >/dev/null
 STATE verdict --session V "À LIVRER" --review "$REV" >/dev/null 2>&1; [ $? -ne 0 ]; check "verdict refused when no reviewer subagent ran (self-review)" $?
 echo '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Agent","input":{"description":"Revue hostile","prompt":"Tu es un relecteur hostile..."}}]}}' >> "$TR"
@@ -98,11 +121,13 @@ STATE verdict --session V "À LIVRER" --review "$REV" >/dev/null 2>&1; check "ve
 OUT=$(printf '{"session_id":"V","hook_event_name":"UserPromptSubmit","prompt":"x","transcript_path":"/new/path.jsonl"}' | PROMPT)
 [ "$(STATE show --session V | python3 -c 'import sys,json; print(json.load(sys.stdin)["transcript"])')" = "/new/path.jsonl" ]; check "prompt hook records the transcript path" $?
 
-# --- Short tasks
-STATE init --session S --title "Tache courte" --project /tmp/s --mode short >/dev/null
+# --- Level 3 tasks
+STATE init --session S --title "Tache moyenne" --project /tmp/s --level 3 >/dev/null
 P=$(STATE show --session S | python3 -c 'import sys,json; print(json.load(sys.stdin)["phase"])')
-[ "$P" = "building" ]; check "short task starts in building (no interview, no go)" $?
-OUT=$(stop_in S | STOP); blocks "$OUT" && echo "$OUT" | grep -q "léger"; check "short task without verdict -> blocked, asks for light review" $?
+[ "$P" = "interview" ]; check "level 3 task starts in interview (mirror + go)" $?
+golive S
+OUT=$(stop_in S | STOP); blocks "$OUT" && echo "$OUT" | grep -q "léger"; check "level 3 without verdict -> blocked, asks for light review" $?
+STATE init --session X --title "Ancien mode" --project /tmp/x --mode short >/dev/null 2>&1; [ $? -ne 0 ]; check "old short mode refused" $?
 STATE init --session X --title "Mauvais mode" --project /tmp/x --mode bidon >/dev/null 2>&1; [ $? -ne 0 ]; check "unknown mode refused" $?
 
 # --- Dashboard export
@@ -113,7 +138,7 @@ assert rows["Tache A"]["phase"] == "Terminée" and rows["Tache A"]["verdict"] ==
 assert rows["Tache B"]["phase"] == "Bloquée"
 assert rows["Tache C"]["phase"] == "Attend ton go" and rows["Tache C"]["pending_count"] == 1
 assert "Budget ?" in rows["Tache C"]["pending_text"]
-assert "Tache courte" not in rows, "short tasks stay off the dashboard"
+assert "Tache moyenne" in rows, "level 3 tasks are on the dashboard"
 EOF
 check "C6 dashboard.json reflects phases, verdicts and pending questions" $?
 
@@ -122,10 +147,23 @@ OUT=$(STATE dashboard-asset bbb); echo "$OUT" | grep -q "aaa"; check "next dashb
 STATE config dashboard_url https://example.test/x >/dev/null; STATE config | grep -q "example.test"; check "config stores dashboard_url" $?
 STATE | grep -q "state.py init"; check "no command -> usage" $?
 
+# Router text + context alert
+prompt_in Z "bonjour" | PROMPT | grep -q "Niveau N"; check "routing rule asks to announce the level" $?
+TC="$AUTOPILOT_HOME/ctx.jsonl"
+echo '{"type":"assistant","message":{"usage":{"input_tokens":10,"cache_read_input_tokens":200000,"cache_creation_input_tokens":5000}}}' > "$TC"
+OUT=$(printf '{"session_id":"Z","hook_event_name":"UserPromptSubmit","prompt":"x","transcript_path":"%s"}' "$TC" | PROMPT)
+echo "$OUT" | grep -q "handoff"; check "context > 150k -> handoff alert" $?
+echo '{"type":"assistant","message":{"usage":{"input_tokens":10,"cache_read_input_tokens":20000}}}' > "$TC"
+OUT=$(printf '{"session_id":"Z","hook_event_name":"UserPromptSubmit","prompt":"x","transcript_path":"%s"}' "$TC" | PROMPT)
+echo "$OUT" | grep -q "handoff"; [ $? -ne 0 ]; check "small context -> no alert" $?
+echo '{"type":"assistant","message":{"model":"<synthetic>","usage":{"input_tokens":0}}}' >> "$TC"
+python3 -c "import sys; sys.path.insert(0,'$DIR/scripts'); import common; assert common.context_tokens('$TC')==20010"; check "synthetic zero-usage message ignored" $?
+STATE init --session L --title "Tache L" --project /tmp/l --level 2 >/dev/null 2>&1; [ $? -ne 0 ]; check "level 2 is never tracked" $?
+
 # --- Robustness
 OUT=$(echo "not json" | STOP); [ $? -eq 0 ] && [ -z "$OUT" ]; check "garbage input -> stop allowed, no crash" $?
 OUT=$(echo "not json" | PROMPT); [ $? -eq 0 ]; check "garbage input -> prompt hook exits 0" $?
-STATE list | python3 -c 'import sys,json; d=json.load(sys.stdin); assert len(d)==5' 2>/dev/null; check "list returns all tasks" $?
+STATE list | python3 -c 'import sys,json; d=json.load(sys.stdin); assert len(d)==6' 2>/dev/null; check "list returns all tasks" $?
 
 rm -rf "$AUTOPILOT_HOME"
 echo "---"; echo "$PASS passed, $FAIL failed"; [ $FAIL -eq 0 ]

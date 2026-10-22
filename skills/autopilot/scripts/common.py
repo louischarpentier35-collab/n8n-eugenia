@@ -1,6 +1,8 @@
 """Shared helpers for the autopilot state files (one JSON file per Claude Code session)."""
+import calendar
 import json
 import os
+import re
 import tempfile
 import time
 
@@ -13,7 +15,7 @@ STOP_ALLOWED = {"interview", "awaiting_go", "done", "paused", "stalled"}
 WORKING = {"building", "reviewing"}
 PHASES = STOP_ALLOWED | WORKING
 VERDICTS = {"À LIVRER", "À CORRIGER", "À REVOIR"}
-MAX_IDLE_BLOCKS = 5
+MAX_IDLE_BLOCKS = 1  # block once; a second stop with no progress -> stalled
 
 
 def now():
@@ -74,8 +76,6 @@ def export_dashboard():
     rows = []
     cutoff = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(time.time() - DONE_KEEP_DAYS * 86400))
     for t in all_tasks():
-        if t.get("mode") == "short":
-            continue
         if t.get("phase") == "done" and t.get("updated_at", "") < cutoff:
             continue
         qs = pending(t)
@@ -141,6 +141,90 @@ def reviewer_agents(transcript_path):
                     if any(k in text for k in ("hostile", "relecteur", "revue", "review")):
                         n += 1
     return n
+
+
+BACKGROUND_MAX_AGE = 2 * 3600  # a job silent for longer than this no longer counts as running
+
+
+def _age(stamp):
+    try:
+        return time.time() - calendar.timegm(time.strptime(stamp[:19], "%Y-%m-%dT%H:%M:%S"))
+    except (TypeError, ValueError):
+        return 0
+
+
+def background_pending(transcript_path):
+    """Number of background jobs (async subagents, background commands) launched in the session,
+    not yet reported by a <task-notification>, not stopped, and younger than BACKGROUND_MAX_AGE.
+    0 if the transcript is unreadable (never a reason to block)."""
+    try:
+        f = open(transcript_path, encoding="utf-8")
+    except (OSError, TypeError):
+        return 0
+    launched, notified, stopped, seen = {}, set(), set(), {}
+    with f:
+        for line in f:
+            if "<task-notification>" in line:
+                # notifications can arrive alone or bundled inside another message: scan the raw line
+                notified.update(re.findall(r"<tool-use-id>([^<]+)</tool-use-id>", line))
+            stopped.update(re.findall(r"[Ss]topped task:? *([\w-]+)", line))
+            if "async_launched" not in line and "run_in_background" not in line and '"tool_result"' not in line:
+                continue
+            try:
+                d = json.loads(line)
+            except ValueError:
+                continue
+            content = d.get("message", {}).get("content", [])
+            for c in content if isinstance(content, list) else []:
+                if c.get("type") == "tool_use" and (c.get("input") or {}).get("run_in_background"):
+                    launched[c.get("id")] = d.get("timestamp", "")
+                elif c.get("type") == "tool_result":
+                    tid = c.get("tool_use_id")
+                    r = d.get("toolUseResult")
+                    if isinstance(r, dict) and (r.get("isAsync") or r.get("status") == "async_launched"):
+                        launched[tid] = d.get("timestamp", "")
+                    if tid in launched:  # keep the job's own ids (agentId, task id) to match a later stop
+                        seen[tid] = seen.get(tid, "") + json.dumps(c.get("content")) + json.dumps(r)
+    return sum(1 for tid, stamp in launched.items()
+               if tid not in notified
+               and not any(sid in seen.get(tid, "") for sid in stopped)
+               and _age(stamp) < BACKGROUND_MAX_AGE)
+
+
+def context_tokens(transcript_path):
+    """Context size of the last main-thread model call (tokens read + written), 0 if unknown."""
+    try:
+        with open(transcript_path, "rb") as f:
+            f.seek(0, 2)
+            size = f.tell()
+            window = 400_000
+            while True:
+                f.seek(max(0, size - window))
+                lines = f.read().decode("utf-8", "ignore").splitlines()
+                n = _last_usage(lines)
+                if n or window >= size:
+                    return n
+                window *= 4  # a huge tool result pushed the last model call out of the window
+    except (OSError, TypeError):
+        return 0
+
+
+def _last_usage(lines):
+    for line in reversed(lines):
+        if '"usage"' not in line:
+            continue
+        try:
+            d = json.loads(line)
+        except ValueError:
+            continue
+        if d.get("type") != "assistant" or d.get("isSidechain"):
+            continue
+        u = d.get("message", {}).get("usage") or {}
+        n = (u.get("input_tokens", 0) + u.get("cache_read_input_tokens", 0)
+             + u.get("cache_creation_input_tokens", 0))
+        if n:  # synthetic messages carry an all-zero usage: keep looking
+            return n
+    return 0
 
 
 def pending(task):

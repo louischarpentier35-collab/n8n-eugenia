@@ -36,4 +36,4 @@ Write the yes/no checklist **before** writing the deliverable, from the request 
 | "The figures are right" | Each figure has a source, and the source was opened and the figure found in it. |
 | "It respects the format" | Word / page / slide count measured, required sections present, language and tone checked against the brief. |
 | "It's finished" | No TODO, no placeholder, no "[…]" left (searched), links answer. |
-| "It meets the expectation" | A fresh subagent given only the request and the deliverable answers PASS/FAIL per criterion. |
+| "It meets the expectation" | A fresh subagent (`model: "sonnet"`) given only the request and the deliverable answers PASS/FAIL per criterion. |

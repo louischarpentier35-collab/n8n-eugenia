@@ -2,16 +2,18 @@
 
 Skills, agents et hooks Claude Code de Louis. Chaque dossier qui contient un `SKILL.md` est un skill, relié à `~/.claude/skills/` par un lien symbolique : on modifie ici, c'est actif partout.
 
-**Louis ne choisit jamais de skill.** Un hook rappelle à chaque message la règle de tri, et le skill `autopilot` enchaîne tout seul :
+**Louis ne choisit jamais de skill.** Un hook rappelle à chaque message le routeur à 4 niveaux ; Claude annonce le niveau (« Niveau N — … ») et Louis peut le forcer (« niveau 3 ») :
 
 ```
 message de Louis
-  ├─ question / discussion ............ réponse normale
-  ├─ tâche courte (< ~30 min) ......... doubt-driven-dev → hostile-review (mode léger) → verdict
-  └─ longue tâche ..................... interview si flou (sinon miroir) → brief → « go » de Louis
-                                         → doubt-driven-dev (ou /dev si projet de code à plusieurs composants)
-                                         → hostile-review → verdict → notification
+  ├─ niveau 1  question / discussion ........ réponse directe, aucun skill
+  ├─ niveau 2  petite tâche localisée ....... faite + vérifiée par Claude seul (pas de skill, sous-agent ni suivi)
+  ├─ niveau 3  tâche moyenne ................ autopilot : miroir + « go » → doubt-driven-dev → 1 relecteur Sonnet
+  └─ niveau 4  vrai projet .................. autopilot : interview → brief → « go » → doubt-driven-dev ou /dev
+                                               → revue hostile complète (Opus conseillé pour la conversation)
 ```
+
+Économie de tokens : conversation principale sur Sonnet par défaut (`model` dans `settings.json`), `model` explicite pour chaque sous-agent (Haiku pour chercher, Sonnet pour construire/relire, Opus pour l'architecte et la sécurité), lecture large déléguée à Haiku, pas de vérification en boucle, alerte de handoff au-delà de ~150k tokens de contexte (calculée par le hook).
 
 | Dossier | Rôle |
 |---|---|
@@ -23,9 +25,9 @@ message de Louis
 
 ## Garanties (hooks dans `~/.claude/settings.json`)
 
-- **UserPromptSubmit** : injecte la règle de tri, l'identifiant de session et l'état de la tâche en cours.
+- **UserPromptSubmit** : injecte le routeur à 4 niveaux, l'identifiant de session, l'état de la tâche en cours et, au-delà de ~150k tokens de contexte, une alerte de handoff.
 - **SessionStart** (après compaction ou reprise) : réinjecte l'état de la tâche.
-- **Stop** : une tâche lancée (phase construction ou revue) ne peut pas se terminer sans verdict de revue hostile, sauf si elle attend une décision de Louis. Anti-boucle : après 5 blocages sans progrès, la tâche passe « bloquée » et une notification part.
+- **Stop** (niveaux 3-4) : une tâche lancée (phase construction ou revue) ne peut pas se terminer sans verdict de revue hostile, sauf si elle attend une décision de Louis. Il ne bloque jamais pendant qu'un sous-agent ou une commande tourne en arrière-plan (la notification réveille Claude), et bloque une seule fois : un second arrêt sans progrès fait passer la tâche « bloquée », avec notification.
 
 État : un fichier JSON par session dans `~/.claude/autopilot/tasks/`, géré par `autopilot/scripts/state.py`. Tableau de bord : URL dans `~/.claude/autopilot/config.json`.
 

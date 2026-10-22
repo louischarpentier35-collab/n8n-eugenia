@@ -50,6 +50,12 @@ wanted = {
     "SessionStart": ("compact|resume", base + 'hook_prompt.py"'),
     "Stop": (None, base + 'hook_stop.py"'),
 }
+# Sonnet by default for the main conversation (Opus by hand for level-4 projects); keeps a model already chosen
+if "model" not in settings:
+    settings["model"] = "sonnet"
+    print("  model = sonnet (par défaut)")
+elif settings["model"] != "sonnet":
+    print(f"  model = {settings['model']} (conservé ; Sonnet est conseillé par défaut)")
 hooks = settings.setdefault("hooks", {})
 for event, (matcher, script) in wanted.items():
     command = "python3 " + script

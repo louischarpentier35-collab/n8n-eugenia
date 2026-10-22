@@ -22,7 +22,7 @@ Optional argument: what to review (a path, a folder, a commit range, a workflow 
 
 ## Step 2 — Hostile reviewers in parallel
 
-Launch **4 fresh subagents (general-purpose) in parallel, in one message**, one per lens. Prompts and per-lens checklists (code and non-code variants): `lenses.md` in this folder.
+Launch **4 fresh subagents (general-purpose) in parallel, in one message**, one per lens, each with an explicit `model`: `sonnet` for A, B and D, `opus` for C (security). Never omit `model` (a subagent without one inherits the session's model, often Opus). Launch them in the background, then end your turn and wait for the notifications: never poll. Prompts and per-lens checklists (code and non-code variants): `lenses.md` in this folder.
 
 | Lens | Attacks |
 |---|---|
@@ -31,11 +31,11 @@ Launch **4 fresh subagents (general-purpose) in parallel, in one message**, one 
 | **C. Sécurité et coûts** | Secrets, personal data, injection, access control, unwanted sends (emails, posts), calls that burn API credits or execution quota, things that could cost money or reputation. |
 | **D. Simplicité et maintenabilité** | Over-engineering, dead code, a native node / built-in / maintained library ignored (allowed to search the web), readable in 6 months, project conventions respected. |
 
-Small task (one file, a few lines, a short document)? Use the **light mode** below instead.
+Level 3 task? Use the **light mode** below instead. Level 1-2 requests never reach this skill (no reviewer).
 
-### Light mode (short tasks)
+### Light mode (level 3)
 
-For a short task (autopilot `mode short`, or a change of a few files / a short document): **one** fresh subagent covers the 4 lenses at once (common prompt from `lenses.md` + the 4 checklists, at most 6 findings in total, lens A first). Then verify each BLOQUANT / MAJEUR yourself by reproducing it (no verifier subagents), fix the confirmed ones with the doubt-driven loop, re-run the full checks, and skip the re-review round. REVIEW.md is still written (short) and the verdict rules are the same. Never skip lens A, even in light mode.
+For a level 3 task (autopilot `--level 3`): **one** fresh subagent (`model: "sonnet"`) covers the 4 lenses at once (common prompt from `lenses.md` + the 4 checklists, at most 6 findings in total, lens A first). Then verify each BLOQUANT / MAJEUR yourself by reproducing it (no verifier subagents), fix the confirmed ones with the doubt-driven loop, re-run the full checks, and skip the re-review round. REVIEW.md is still written (short) and the verdict rules are the same. Never skip lens A, even in light mode.
 
 Each reviewer is **read-only** (it may run tests, `n8ncli validate`, `n8ncli test`, builds, greps, but changes nothing, and never runs a real `n8ncli exec`, a send, a push or a deploy). Each returns at most **8 findings**, each with:
 - **severity** (scale below), **lens**, **location** (file:line, n8n node name, document section),
@@ -60,7 +60,7 @@ Each reviewer is **read-only** (it may run tests, `n8ncli validate`, `n8ncli tes
 Reviewers make mistakes and invent problems. Nothing reaches Louis or gets fixed unverified.
 
 1. **Deduplicate** across lenses (same root cause = one finding, keep the highest severity).
-2. **BLOQUANT and MAJEUR**: launch **one verifier subagent per lens that produced any** (in parallel), given the artefact, the contract and those findings, with the instruction: "Essaie de réfuter chaque point. Reproduis le scénario d'échec (lance la commande, le test, lis le code). Réponds pour chacun : CONFIRMÉ (avec la preuve) ou RÉFUTÉ (avec la raison)." Then check the verifiers' evidence yourself.
+2. **BLOQUANT and MAJEUR**: launch **one verifier subagent (`model: "sonnet"`) per lens that produced any** (in parallel), given the artefact, the contract and those findings, with the instruction: "Essaie de réfuter chaque point. Reproduis le scénario d'échec (lance la commande, le test, lis le code). Réponds pour chacun : CONFIRMÉ (avec la preuve) ou RÉFUTÉ (avec la raison)." Then check the verifiers' evidence yourself.
 3. **AMÉLIORATION and SUGGESTION**: verify them yourself (does the suggested library exist and fit? is the "simpler" version really equivalent?). Drop what doesn't hold.
 4. Refuted findings are dropped but kept in one line in REVIEW.md (to show what was checked). A finding that can be neither confirmed nor refuted becomes **INVÉRIFIABLE**.
 
@@ -79,7 +79,7 @@ For each confirmed BLOQUANT and MAJEUR, apply the doubt-driven loop (`~/.claude/
 
 ## Step 6 — Re-review (bounded)
 
-After the fixes, one **targeted** re-review: a fresh subagent gets the contract, the fix diff and the list of fixed findings, and checks (a) each one is really fixed, (b) the fixes didn't break anything nearby. New confirmed BLOQUANT / MAJEUR → fix and re-check once more.
+After the fixes, one **targeted** re-review: a fresh subagent (`model: "sonnet"`) gets the contract, the fix diff and the list of fixed findings, and checks (a) each one is really fixed, (b) the fixes didn't break anything nearby. New confirmed BLOQUANT / MAJEUR → fix and re-check once more.
 
 **Max 2 fix → re-review rounds.** Stop earlier if a round finds nothing confirmed. If findings keep being mostly new each round, the reviewers are inventing: stop. Whatever is still open after round 2 goes to Louis.
 

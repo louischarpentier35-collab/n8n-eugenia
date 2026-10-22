@@ -1,6 +1,6 @@
 ---
 name: doubt-driven-dev
-description: Build in doubt mode - while building, constantly question both whether the work is right (settled by binary PASS/FAIL checks, never by confidence) and whether it is the best way (search the web for existing libraries, services, n8n nodes or templates that would do it better or simpler, and self-review for over-engineering). Activates automatically whenever Claude works alone on a task Louis delegated (including /dev architect, builders and debugger), and when Louis types /doubt-driven-dev or says "doute", "mode doute". Not for step-by-step pair work with Louis.
+description: Build in doubt mode - while building, constantly question both whether the work is right (settled by binary PASS/FAIL checks, never by confidence) and whether it is the best way (search the web for existing libraries, services, n8n nodes or templates that would do it better or simpler, and self-review for over-engineering). Activates automatically on level 3-4 tasks Claude works on alone (including /dev architect, builders and debugger), and when Louis types /doubt-driven-dev or says "doute", "mode doute". Not for step-by-step pair work with Louis.
 ---
 
 # /doubt-driven-dev — Build, doubt, prove, look for better
@@ -13,6 +13,8 @@ You build things on your own. Louis is not there to suggest better ideas or catc
 You are overconfident by default, on both axes. This skill removes that confidence.
 
 **Language:** this skill is in English, but talk to Louis in French and keep the doubt log in French.
+
+**Proportional to the level** (autopilot triage): at **level 2** (small localized change) keep only the iron law of evidence (run the check, read its output, before saying it works): no `DOUBTS.md`, no web search, no subagent. Everything below is for **levels 3 and 4**.
 
 ## The iron law
 
@@ -54,7 +56,7 @@ Before building a non-trivial component (a generic utility of more than ~20 line
 2. **What the platform already gives**: native n8n nodes and n8n templates, framework built-ins, MCP servers and skills already installed, features of a service already in use (e.g. Supabase auth instead of custom auth).
 3. **Package registries and the web**: npm / PyPI, GitHub, official docs, "best way to X in <stack> <year>" searches (WebSearch, WebFetch).
 
-**Budget**: short and targeted, about 3 searches / 5 minutes per component; compare **2 to 3 candidates max** with the yes/no checklist in `prior-art-checklist.md`, then decide. For a structuring choice (stack, central service, data model, a whole architecture), launch a research subagent instead, with the same checklist.
+**Budget**: short and targeted, about 3 searches / 5 minutes per component; compare **2 to 3 candidates max** with the yes/no checklist in `prior-art-checklist.md`, then decide. For a structuring choice (stack, central service, data model, a whole architecture), launch a research subagent instead (`model: "haiku"`), with the same checklist.
 
 **Decision** (log it, with the rejected options in one line each):
 - **Reuse** what the project already has.

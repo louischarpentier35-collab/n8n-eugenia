@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Autopilot task state, one file per session. Claude calls this at every phase change.
 
-  state.py init    --session S --title T --project DIR [--brief PATH] [--mode direct|dev]
+  state.py init    --session S --title T --project DIR [--brief PATH] [--level 3|4] [--mode direct|dev]
   state.py phase   --session S PHASE
   state.py ask     --session S "question"        (queue a question for Louis; work goes on)
   state.py answer  --session S Q1 "answer"
@@ -50,6 +50,7 @@ def main():
     p.add_argument("--project")
     p.add_argument("--brief")
     p.add_argument("--mode", default="direct")
+    p.add_argument("--level", default="4")
     p.add_argument("--reason")
     p.add_argument("--review")
     a = p.parse_args()
@@ -79,22 +80,19 @@ def main():
     if a.cmd == "init":
         if not a.title or not a.project:
             fail("init demande --title et --project")
-        if a.mode not in ("direct", "dev", "short"):
-            fail("--mode : direct, dev ou short")
-        # a short task needs no interview nor go: it starts building, but still needs a verdict
+        if a.mode not in ("direct", "dev"):
+            fail("--mode : direct ou dev (une tâche moyenne, c'est --level 3)")
+        if a.level not in ("3", "4"):
+            fail("--level : 3 (tâche moyenne) ou 4 (projet) ; les niveaux 1-2 ne sont pas suivis")
         task = {
             "session_id": a.session, "title": a.title, "project": a.project,
-            "brief": a.brief or "", "mode": a.mode,
-            "phase": "building" if a.mode == "short" else "interview",
+            "brief": a.brief or "", "mode": a.mode, "level": int(a.level),
+            "phase": "interview",
             "questions": [], "waiting_reason": "", "verdict": "", "review": "",
             "doubts": "", "created_at": common.now(),
         }
         common.save(task)
-        if a.mode == "short":
-            print("Tâche courte suivie (phase building) : fais-la en mode doubt-driven-dev, puis "
-                  "hostile-review en mode léger, puis verdict et finish. Pas de tableau de bord.")
-        else:
-            print(f"Tâche autopilot créée (phase interview). {DASHBOARD_HINT}")
+        print(f"Tâche autopilot niveau {a.level} créée (phase interview). {DASHBOARD_HINT}")
         return
 
     task = need(a.session)
@@ -104,8 +102,7 @@ def main():
             fail(f"phase inconnue, choisis parmi : {', '.join(sorted(common.PHASES))}")
         if a.args[0] == "done":
             fail("pour terminer, utilise verdict puis finish")
-        if (a.args[0] == "building" and task.get("mode") != "short"
-                and task["phase"] in ("interview", "awaiting_go") and not task.get("go_seen")):
+        if (a.args[0] == "building" and task["phase"] in ("interview", "awaiting_go") and not task.get("go_seen")):
             fail("pas de « go » de Louis : passe en awaiting_go, demande « Je lance ? » et termine ton "
                  "tour. Seul un nouveau message de Louis après cette question peut lancer la construction "
                  "(sa demande initiale n'est jamais un go, même détaillée ou « en autonomie »).")

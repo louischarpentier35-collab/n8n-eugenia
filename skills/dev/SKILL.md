@@ -16,7 +16,7 @@ Optional argument: path of the project folder. Without an argument → current f
 - **Build = automatic.** Once the architecture is validated, you chain the batches without asking permission, in parallel when possible.
 - **Files are the memory.** Everything goes through `_dev/` in the project. The agents do not talk to each other: they read and write these files.
 - **Light teaching.** Louis is not an expert developer: explain choices in plain language, without unexplained jargon, in a few lines.
-- **Moderate cost.** Opus only for architect / reviewer / debugger. Max 4 builders in parallel. Review per batch, not per task.
+- **Moderate cost.** Opus only for the architect (and the debugger's second attempt). Max 4 builders in parallel. Review per batch, not per task.
 - **Nothing irreversible or public without agreement**: deployment, push to a remote, deletion, migrations on a remote database → always ask Louis.
 - **Secrets**: never a key in the code or in git. `.env.local` (ignored by git) + `.env.example` committed. Louis enters his real keys himself.
 
@@ -95,4 +95,4 @@ Do not ask permission between batches. Stop only if: a blocked task that the nex
 
 ## Models
 
-Agents: explorateur (haiku), product (sonnet), builder (sonnet), deployeur (sonnet), architecte / relecteur / debuggeur (opus). The orchestrator runs on the session's model: Sonnet recommended to save cost.
+Agents: explorateur (haiku), product / builder / deployeur / relecteur / debuggeur (sonnet), architecte (opus). If the debuggeur fails once on the same problem, relaunch it with `model: "opus"`. Any other subagent you launch gets an explicit `model` (haiku for searches and broad reads, sonnet otherwise): a subagent without one inherits the session's model. The orchestrator runs on the session's model: Sonnet by default, Opus recommended for the design phase of a real project.

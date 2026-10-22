@@ -9,11 +9,16 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import common  # noqa: E402
 
 ROUTING = (
-    "[autopilot] session_id={sid}. Avant de répondre, classe le message de Louis : "
-    "question ou conversation → réponds normalement ; tâche à réaliser (construire, corriger, "
-    "rédiger, automatiser…) → charge d'abord le skill `autopilot`, qui choisit seul interview, "
-    "doubt-driven-dev, /dev et hostile-review. Ne demande jamais à Louis quel skill utiliser."
+    "[autopilot] session_id={sid}. Classe le message de Louis et commence ta réponse par "
+    "« Niveau N — … » (une ligne). 1 question/conversation → réponds directement, sans skill. "
+    "2 petite tâche claire (un fichier, un nœud, une modif localisée) → fais-la toi-même et "
+    "vérifie-la, sans skill, sans sous-agent, sans suivi. 3 tâche moyenne ou 4 vrai projet "
+    "(plan, architecture, nouvel outil) → charge le skill `autopilot`. Dans le doute, le niveau "
+    "le plus bas. « niveau N » écrit par Louis force le niveau."
 )
+
+
+CONTEXT_ALERT = 150_000
 
 
 def main():
@@ -24,6 +29,10 @@ def main():
     except Exception:
         return
     ctx = ROUTING.format(sid=sid)
+    size = common.context_tokens(data.get("transcript_path"))
+    if size > CONTEXT_ALERT:
+        ctx += (f" Contexte de la conversation ≈ {size // 1000}k tokens : chaque tour le relit en "
+                "entier. Propose à Louis un `handoff` vers une conversation neuve.")
     task = common.load(sid)
     changed = False
     if task and data.get("transcript_path") and task.get("transcript") != data["transcript_path"]:

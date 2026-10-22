@@ -28,7 +28,7 @@ Optional argument: the topic ("/interview refonte onboarding navarre-app"). With
    - **n8n workflow**: the files of the workflow concerned in `n8n/` (read only, no `n8ncli exec`), credentials already in use, neighbouring workflows that could be reused.
    - **Non-code deliverable**: source documents, instructions, previous deliverables of the same kind.
    - **School project**: course instructions, grading scale, imposed constraints (e.g. beginner level, no Code node).
-   If the exploration is broad, launch an Explore subagent and keep only its conclusions.
+   Broad read (several files, an unknown folder, a whole n8n workflow, more than ~20k tokens to go through) → an Explore subagent with `model: "haiku"`, keep only its conclusions. Targeted read (one file, a grep, one node) → do it yourself.
 3. Fill in the coverage grid mentally (see `coverage-grid.md` in this folder): each line is **Clear** (found or said), **Partial**, or **Missing**.
 
 ## Step 2 — Mirror
@@ -64,7 +64,7 @@ Stop asking when **both** conditions are true:
 1. Every line of the grid (common core + the module for the topic type) is ✅, or marked as an assumption validated by Louis.
 2. Launcher test: "If I had to start now, is there a single place where I would have to guess?" Go through each component of the list. If yes → new round.
 
-For a big project or a long interview (more than ~15 questions), draft the brief and have it reviewed by a fresh subagent (general-purpose) with the instruction: "List every place where someone executing this brief would have to guess." Sort its gaps: already answered (ignore), minor (decide yourself and note it in the brief), Louis's decision (one last round).
+For a big project or a long interview (more than ~15 questions), draft the brief and have it reviewed by a fresh subagent (general-purpose, `model: "sonnet"`) with the instruction: "List every place where someone executing this brief would have to guess." Sort its gaps: already answered (ignore), minor (decide yourself and note it in the brief), Louis's decision (one last round).
 
 ## Step 5 — Brief
 
