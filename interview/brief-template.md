@@ -1,6 +1,6 @@
-# Modèle de brief
+# Brief template
 
-Remplis chaque section. Une section vide n'est pas acceptable : écris « Aucun » ou « Sans objet » si c'est le cas. Dans « Décisions », chaque ligne dit qui a tranché.
+Fill in every section, in French (the brief is read and validated by Louis). An empty section is not acceptable: write "Aucun" or "Sans objet" when relevant. In "Décisions", each line says who decided.
 
 ```markdown
 # Brief — <sujet>
@@ -51,3 +51,5 @@ Remplis chaque section. Une section vide n'est pas acceptable : écris « Aucun 
 ## Journal de l'interview
 <Q → R, une ligne par question posée, dans l'ordre.>
 ```
+
+Note for `/dev`: it detects a validated brief through the "Statut : validé" line, so keep that wording.
