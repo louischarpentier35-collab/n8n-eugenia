@@ -19,8 +19,10 @@ def desktop_notif(msg):
     if os.environ.get("AUTOPILOT_NO_DESKTOP_NOTIF"):
         return
     try:
-        subprocess.run(["osascript", "-e", f'display notification "{msg}" with title "Autopilot"'],
-                       timeout=5, capture_output=True)
+        # the message is passed as an argument, never inside the script: a title can't inject AppleScript
+        subprocess.run(["osascript", "-e", "on run argv", "-e",
+                        'display notification (item 1 of argv) with title "Autopilot"', "-e", "end run",
+                        msg], timeout=5, capture_output=True)
     except Exception:
         pass
 
