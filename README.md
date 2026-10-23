@@ -2,8 +2,8 @@
 
 Ce dépôt contient le rendu du projet de cours n8n : le workflow, les skills Claude Code utilisés pour le construire et leurs grilles de travail.
 
-**Vidéo de démonstration** (5 à 10 min) : (https://youtu.be/4cf_R_QiVnU)
-**Transcript** : `docs/transcript-video.md` _(à ajouter une fois la vidéo finalisée)_
+**Vidéo de démonstration** (5 à 10 min) : [voir la vidéo](https://youtu.be/4cf_R_QiVnU)
+**Transcript** : [`docs/transcript-video.md`](docs/transcript-video.md)
 
 ## Le projet en bref
 
@@ -38,7 +38,7 @@ docs/        captures et transcript de la vidéo
 | Pas de nœud Code | Aucun. Nœuds natifs (Set, Filter, If, Sort, Limit, Summarize, Merge, HTML…) et expressions `{{ }}` |
 | Pas de nœud HTTP sauf si indispensable | 2 nœuds HTTP Request, indispensables (voir ci-dessous) |
 
-**Pourquoi 2 nœuds HTTP Request ?** Les nœuds « Posts populaires du candidat » et « Posts populaires du compte suivi » appellent l'API ScrapeCreators, qui n'a pas de nœud natif dans n8n. Le nœud HTTP Request est donc le seul moyen de l'appeler. La clé API n'est pas dans le workflow : elle est stockée dans un credential d'en-tête (`x-api-key`). La pagination (`max_cursor`) utilise l'option native du nœud HTTP, sans code. La card « Étape 2 » du canevas le rappelle.
+**Pourquoi 2 nœuds HTTP Request ?** Les nœuds « Popular posts of candidate » et « Popular posts of followed account » appellent l'API ScrapeCreators, qui n'a pas de nœud natif dans n8n. Le nœud HTTP Request est donc le seul moyen de l'appeler. La clé API n'est pas dans le workflow : elle est stockée dans un credential d'en-tête (`x-api-key`). La pagination (`max_cursor`) utilise l'option native du nœud HTTP, sans code. La card « Step 2 » du canevas le rappelle.
 
 ## Importer et tester avec n8n-cli
 
@@ -47,7 +47,7 @@ n8ncli validate "workflows/Veille carrousels TikTok Shop.workflow.ts"
 ```
 
 ```bash
-n8ncli test "workflows/Veille carrousels TikTok Shop.workflow.ts" --pin-data <données-simulées.json> --trigger "Lancer la collecte"
+n8ncli test "workflows/Veille carrousels TikTok Shop.workflow.ts" --pin-data <données-simulées.json> --trigger "Start collection"
 ```
 
 `n8ncli test` exécute le workflow avec les sorties de nœuds fournies dans le fichier JSON (par exemple les réponses d'une vraie collecte). Les nœuds simulés n'appellent pas l'API : 0 crédit ScrapeCreators.
