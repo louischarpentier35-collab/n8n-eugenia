@@ -79,7 +79,7 @@ Workflow : [`workflows/Veille carrousels TikTok Shop.workflow.ts`](workflows/Vei
 |---|---|
 | Cards qui expliquent le workflow | 9 notes sur le canevas : 1 par déclencheur, 1 par étape (7) |
 | Nœuds renommés | Oui, tous |
-| Credentials renommés | ScrapeCreatorsAPI, GoogleSheetsAPI, GmailAPI, Gemini |
+| Credentials renommés | ScrapeCreatorsAPI, GoogleSheetsAPI, GmailAPI ; le credential Gemini garde son nom par défaut (« Default Gemini Projet – … »), choix assumé |
 | Pas de nœud Code | Aucun nœud Code : nœuds natifs (Set, Filter, If, Sort, Limit, Summarize, Merge, HTML…) et expressions `{{ }}` |
 | Pas de nœud HTTP sauf si indispensable | 2 nœuds HTTP, indispensables (voir ci-dessous) |
 
