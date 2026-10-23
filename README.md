@@ -63,3 +63,36 @@ Les deux premiers sont gratuits. Le troisième lance de vraies sessions Claude (
 - `skills/` : les skills Claude (autopilot, dev, doubt-driven-dev, hostile-review, interview). `install.sh` crée leurs liens dans `~/.claude/skills`.
 - `agents/` : les sous-agents de /dev.
 - `workflows/` : le workflow n8n rendu pour le cours « Veille carrousels TikTok Shop » (export `.workflow.ts`, à importer avec n8n-cli).
+
+## Projet de cours n8n : « Veille carrousels TikTok Shop »
+
+Workflow : [`workflows/Veille carrousels TikTok Shop.workflow.ts`](workflows/Veille%20carrousels%20TikTok%20Shop.workflow.ts) (version du 23/10/2026, 60 nœuds). Il repère les créateurs TikTok français qui vendent par carrousels photo liés à TikTok Shop, classe leurs carrousels (vitesse × surperformance) dans un Google Sheet et envoie un récapitulatif par email (top 10 + analyse rédigée par Gemini).
+
+- **Qualification des candidats** (formulaire) : 1 crédit ScrapeCreators par candidat, le compte devient « suivi » s'il publie assez de carrousels shoppables.
+- **Collecte** (manuelle) : 30 posts populaires par compte suivi, filtre carrousels shoppables puis légendes en français, scores, mise à jour du classement, bilan, email.
+
+**Vidéo de démonstration** : _lien à ajouter_. Transcript : _à ajouter_.
+
+### Standards du cours
+
+| Standard | État |
+|---|---|
+| Cards qui expliquent le workflow | 9 notes sur le canevas : 1 par déclencheur, 1 par étape (7) |
+| Nœuds renommés | Oui, tous |
+| Credentials renommés | ScrapeCreatorsAPI, GoogleSheetsAPI, GmailAPI, Gemini |
+| Pas de nœud Code | Aucun nœud Code : nœuds natifs (Set, Filter, If, Sort, Limit, Summarize, Merge, HTML…) et expressions `{{ }}` |
+| Pas de nœud HTTP sauf si indispensable | 2 nœuds HTTP, indispensables (voir ci-dessous) |
+
+**Pourquoi 2 nœuds HTTP Request ?** « Posts populaires du candidat » et « Posts populaires du compte suivi » appellent l'API ScrapeCreators, qui n'a pas de nœud natif dans n8n. Le nœud HTTP Request est donc le seul moyen de l'appeler. La clé API n'est pas dans le workflow : elle est dans un credential d'en-tête (`x-api-key`). La pagination (`max_cursor`) utilise l'option native du nœud HTTP, sans code. La card « Étape 2 » du canevas le rappelle.
+
+### Importer et tester avec n8n-cli
+
+```bash
+n8ncli validate "workflows/Veille carrousels TikTok Shop.workflow.ts"
+```
+
+```bash
+n8ncli test "workflows/Veille carrousels TikTok Shop.workflow.ts" --pin-data <données-simulées.json> --trigger "Lancer la collecte"
+```
+
+`n8ncli test` exécute le workflow avec les sorties de nœuds fournies dans le fichier JSON (par exemple les réponses d'une vraie collecte) : les nœuds simulés n'appellent pas l'API, donc 0 crédit ScrapeCreators.
