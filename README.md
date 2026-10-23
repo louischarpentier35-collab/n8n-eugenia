@@ -7,7 +7,7 @@ Ce dépôt contient le rendu du projet de cours n8n : le workflow, les skills Cl
 
 ## Le projet en bref
 
-Le workflow repère des créateurs TikTok français qui vendent via des carrousels photo liés à TikTok Shop. Il classe leurs carrousels par vitesse et surperformance dans un Google Sheet, puis envoie un récapitulatif par email (top 10 et analyse rédigée par Gemini).
+Mon workflow repère des créateurs TikTok français qui vendent via des carrousels photo liés à TikTok Shop. Il classe leurs carrousels par vitesse et surperformance dans un Google Sheet, puis envoie un récapitulatif par email (top 10 et analyse rédigée par Gemini).
 
 ![Vue d'ensemble du workflow dans n8n](docs/capture-workflow.png)
 
