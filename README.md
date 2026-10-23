@@ -2,7 +2,7 @@
 
 Ce dépôt contient le rendu du projet de cours n8n : le workflow, les skills Claude Code utilisés pour le construire et leurs grilles de travail.
 
-**Vidéo de démonstration** (5 à 10 min) : [voir la vidéo](https://youtu.be/4cf_R_QiVnU)
+**Vidéo de démonstration** (8 min) : [voir la vidéo](https://youtu.be/4cf_R_QiVnU)
 **Transcript** : [`docs/transcript-video.md`](docs/transcript-video.md)
 
 ## Le projet en bref
