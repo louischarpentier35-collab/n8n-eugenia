@@ -39,15 +39,3 @@ docs/        captures et transcript de la vidéo
 | Pas de nœud HTTP sauf si indispensable | 2 nœuds HTTP Request, indispensables (voir ci-dessous) |
 
 **Pourquoi 2 nœuds HTTP Request ?** Les nœuds « Popular posts of candidate » et « Popular posts of followed account » appellent l'API ScrapeCreators, qui n'a pas de nœud natif dans n8n. Le nœud HTTP Request est donc le seul moyen de l'appeler. La clé API n'est pas dans le workflow : elle est stockée dans un credential d'en-tête (`x-api-key`). La pagination (`max_cursor`) utilise l'option native du nœud HTTP, sans code. La card « Step 2 » du canevas le rappelle.
-
-## Importer et tester avec n8n-cli
-
-```bash
-n8ncli validate "workflows/TikTok Shop Carousel Watch.workflow.ts"
-```
-
-```bash
-n8ncli test "workflows/TikTok Shop Carousel Watch.workflow.ts" --pin-data <données-simulées.json> --trigger "Start collection"
-```
-
-`n8ncli test` exécute le workflow avec les sorties de nœuds fournies dans le fichier JSON (par exemple les réponses d'une vraie collecte). Les nœuds simulés n'appellent pas l'API : 0 crédit ScrapeCreators.
