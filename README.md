@@ -34,7 +34,7 @@ docs/        captures et transcript de la vidéo
 |---|---|
 | Cards qui expliquent le workflow | Notes sur le canevas : 1 par déclencheur et 1 par étape |
 | Nœuds renommés | Oui, tous |
-| Credentials renommés | ScrapeCreatorsAPI, GoogleSheetsAPI, GmailAPI. Le credential Gemini garde son nom par défaut (« Default Gemini Projet – … ») : choix assumé |
+| Credentials renommés | ScrapeCreatorsAPI, GoogleSheetsAPI, GmailAPI. Le credential Gemini garde son nom par défaut (« Default Gemini Projet – … ») |
 | Pas de nœud Code | Aucun. Nœuds natifs (Set, Filter, If, Sort, Limit, Summarize, Merge, HTML…) et expressions `{{ }}` |
 | Pas de nœud HTTP sauf si indispensable | 2 nœuds HTTP Request, indispensables (voir ci-dessous) |
 
