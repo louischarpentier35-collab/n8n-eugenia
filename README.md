@@ -43,11 +43,11 @@ docs/        captures et transcript de la vidéo
 ## Importer et tester avec n8n-cli
 
 ```bash
-n8ncli validate "workflows/Veille carrousels TikTok Shop.workflow.ts"
+n8ncli validate "workflows/TikTok Shop Carousel Watch.workflow.ts"
 ```
 
 ```bash
-n8ncli test "workflows/Veille carrousels TikTok Shop.workflow.ts" --pin-data <données-simulées.json> --trigger "Start collection"
+n8ncli test "workflows/TikTok Shop Carousel Watch.workflow.ts" --pin-data <données-simulées.json> --trigger "Start collection"
 ```
 
 `n8ncli test` exécute le workflow avec les sorties de nœuds fournies dans le fichier JSON (par exemple les réponses d'une vraie collecte). Les nœuds simulés n'appellent pas l'API : 0 crédit ScrapeCreators.
